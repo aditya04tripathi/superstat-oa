@@ -23,21 +23,6 @@ Assessment intent:
 - deliver production-minded DX through strict typing, formatting, hooks, and build validation
 - provide a maintainable feature-first codebase with clear architecture and documentation
 
-## Repository Details (For GitHub Form)
-
-Use the following values in the GitHub "Edit repository details" modal.
-
-- Description:
-   Superstat role assessment: multi-tenant basketball video tagging and player analytics platform built with Next.js and Supabase.
-- Website:
-   https://your-assessment-deployment-url
-- Topics (space-separated):
-   superstat assessment nextjs react typescript supabase basketball analytics video-tagging rls shadcn tailwind
-- Include in home page:
-   Releases = checked
-   Deployments = checked
-   Packages = unchecked
-
 ## Table Of Contents
 
 - [Features](#features)
