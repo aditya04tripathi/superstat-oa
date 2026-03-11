@@ -12,6 +12,32 @@ Superstat is a multi-tenant basketball analytics app built with Next.js + Supaba
 
 The app uses Supabase Row Level Security (RLS) with a custom `x-club-id` request header to isolate club data.
 
+## Superstat Role Assessment Context
+
+This repository is prepared as a technical assessment submission for a role at Superstat.
+
+Assessment intent:
+
+- demonstrate end-to-end product thinking for coaching analytics workflows
+- implement secure multi-tenant data isolation with Supabase RLS
+- deliver production-minded DX through strict typing, formatting, hooks, and build validation
+- provide a maintainable feature-first codebase with clear architecture and documentation
+
+## Repository Details (For GitHub Form)
+
+Use the following values in the GitHub "Edit repository details" modal.
+
+- Description:
+   Superstat role assessment: multi-tenant basketball video tagging and player analytics platform built with Next.js and Supabase.
+- Website:
+   https://your-assessment-deployment-url
+- Topics (space-separated):
+   superstat assessment nextjs react typescript supabase basketball analytics video-tagging rls shadcn tailwind
+- Include in home page:
+   Releases = checked
+   Deployments = checked
+   Packages = unchecked
+
 ## Table Of Contents
 
 - [Features](#features)
@@ -279,6 +305,13 @@ From `package.json`:
 - `npm run lint` eslint
 - `npm run format` prettier for ts/tsx
 - `npm run typecheck` TypeScript no-emit check
+
+Commit quality gates (local):
+
+- Husky `pre-commit` runs:
+   - `bun run format`
+   - `bun run build`
+- Husky `commit-msg` runs Commitlint with Conventional Commits rules
 
 Note:
 
