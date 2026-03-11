@@ -1,4 +1,3 @@
-
 # Basketball Video Tagger
 
 This is a web application that allows coaches and analysts to upload basketball game videos and tag gameplay events with timestamps and player associations. The result is structured, queryable event data derived from raw video footage.
@@ -26,9 +25,9 @@ This is a web application that allows coaches and analysts to upload basketball 
 2.  **Run the following SQL schema** in the Supabase SQL editor to create the necessary tables and policies. You can copy the contents of `reset_schema.sql`.
 
 3.  **Seeding Data:**
-    -   Add `SUPABASE_SERVICE_ROLE_KEY` to your `.env.local` to bypass RLS during seeding.
-    -   Run `node scripts/seed.cjs`.
-    -   **Troubleshooting:** If you cannot use the service role key and get RLS errors, run the SQL in `allow_seed_rls.sql` in the Supabase SQL Editor to temporarily allow public writes, then run the seed script again.
+    - Add `SUPABASE_SERVICE_ROLE_KEY` to your `.env.local` to bypass RLS during seeding.
+    - Run `node scripts/seed.cjs`.
+    - **Troubleshooting:** If you cannot use the service role key and get RLS errors, run the SQL in `allow_seed_rls.sql` in the Supabase SQL Editor to temporarily allow public writes, then run the seed script again.
 
 ## How to Run
 
