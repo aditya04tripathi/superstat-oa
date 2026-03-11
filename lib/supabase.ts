@@ -1,9 +1,10 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js"
+import { cookies } from "next/headers"
 import { type ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies"
 import { Database } from "./database.types"
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabaseUrl = process.env.SUPABASE_URL!
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY!
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error("Missing Supabase environment variables")
@@ -11,27 +12,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export type TypedSupabaseClient = SupabaseClient<Database>
 
-let browserClient: TypedSupabaseClient | null = null
-let currentClubId: string | null = null
-
-export const createBrowserClient = (clubId: string | null): TypedSupabaseClient => {
-  if (browserClient && currentClubId === clubId) {
-    return browserClient
-  }
-
-  currentClubId = clubId
-  browserClient = createClient<Database>(supabaseUrl, supabaseAnonKey, {
-    global: {
-      headers: {
-        "x-club-id": clubId || "",
-      },
-    },
-  })
-
-  return browserClient
-}
-
-export const createServerClient = (cookieStore: ReadonlyRequestCookies): TypedSupabaseClient => {
+export const createServerClient = (
+  cookieStore: ReadonlyRequestCookies
+): TypedSupabaseClient => {
   const clubId = cookieStore.get("selected_club_id")?.value
   return createClient<Database>(supabaseUrl, supabaseAnonKey, {
     global: {
@@ -40,4 +23,14 @@ export const createServerClient = (cookieStore: ReadonlyRequestCookies): TypedSu
       },
     },
   })
+}
+
+export async function getServerClient(): Promise<TypedSupabaseClient> {
+  const cookieStore = await cookies()
+  return createServerClient(cookieStore)
+}
+
+export async function getClubId(): Promise<string | null> {
+  const cookieStore = await cookies()
+  return cookieStore.get("selected_club_id")?.value ?? null
 }
