@@ -34,14 +34,22 @@ jobs:
       - name: Format with Prettier
         run: bunx prettier --write "**/*.{ts,tsx,js,jsx,json,css,md}"
 
+      - name: Detect formatting changes
+        id: format_changes
+        run: |
+          # Stage only tracked file updates/deletions to avoid committing unrelated untracked files.
+          git add -u
+          if git diff --cached --quiet; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "No formatting changes."
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Commit formatted files
+        if: steps.format_changes.outputs.has_changes == 'true'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if ! git diff --quiet; then
-            git add -A
-            git commit -m "style: auto-format with prettier [skip ci]"
-            git push
-          else
-            echo "No formatting changes."
-          fi
+          git commit -m "style: auto-format with prettier [skip ci]"
+          git push
