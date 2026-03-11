@@ -9,9 +9,11 @@
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
+    "precommit:checks": "npm run format && git add -u && npm run build",
     "typecheck": "tsc --noEmit",
     "seed:synthetic": "node scripts/seed-synthetic.mjs",
-    "seed:synthetic:clear": "SEED_CLEAR=1 node scripts/seed-synthetic.mjs"
+    "seed:synthetic:clear": "SEED_CLEAR=1 node scripts/seed-synthetic.mjs",
+    "prepare": "husky"
   },
   "dependencies": {
     "@base-ui/react": "^1.2.0",
@@ -47,6 +49,8 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.4.3",
+    "@commitlint/config-conventional": "^20.4.3",
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4.2.1",
     "@types/js-cookie": "^3.0.6",
@@ -55,6 +59,7 @@
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.2",
     "eslint-config-next": "16.1.6",
+    "husky": "^9.1.7",
     "postcss": "^8.5.8",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
