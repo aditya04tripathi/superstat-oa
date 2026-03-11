@@ -10,7 +10,6 @@ import {
   LogOut,
   Users,
   Building2,
-  ClipboardCheck,
   ClipboardList,
   ListChecks,
 } from "lucide-react"
@@ -88,12 +87,6 @@ export function AppSidebar({
       href: "/training-attendance",
       icon: ListChecks,
       current: pathname === "/training-attendance",
-    },
-    {
-      name: "Audit",
-      href: "/audit",
-      icon: ClipboardCheck,
-      current: pathname === "/audit",
     },
   ]
 

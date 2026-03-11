@@ -1,5 +1,7 @@
 "use server"
 
+import { revalidatePath } from "next/cache"
+
 import { getServerClient, getClubId } from "@/lib/supabase"
 import { Player } from "@/lib/types"
 
@@ -25,6 +27,7 @@ export async function createPlayer(payload: {
     .single()
 
   if (error) return { data: null, error: error.message }
+  revalidatePath("/players")
   return { data, error: null }
 }
 
@@ -49,6 +52,7 @@ export async function updatePlayer(
     .single()
 
   if (error) return { data: null, error: error.message }
+  revalidatePath("/players")
   return { data, error: null }
 }
 
@@ -58,6 +62,7 @@ export async function deletePlayer(playerId: string): Promise<ActionResult> {
   const { error } = await supabase.from("players").delete().eq("id", playerId)
 
   if (error) return { data: null, error: error.message }
+  revalidatePath("/players")
   return { data: undefined, error: null }
 }
 

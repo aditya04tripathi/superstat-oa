@@ -20,7 +20,7 @@ export default async function SidebarLayout({
 
   return (
     <SidebarProvider>
-      <AppSidebar collapsible="icon" />
+      <AppSidebar collapsible="offcanvas" />
       <div className="h-full w-full">
         <ShellTopBar />
         <div className="mx-auto max-w-6xl px-3">{children}</div>
