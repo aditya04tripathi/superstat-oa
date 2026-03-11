@@ -1,4 +1,3 @@
-
 # Superstat
 
 Superstat is a multi-tenant basketball analytics app built with Next.js + Supabase. It enables clubs to:
@@ -83,20 +82,20 @@ The app uses Supabase Row Level Security (RLS) with a custom `x-club-id` request
 ## Architecture Overview
 
 1. Club context
-     - user selects a club on `/`
-     - server action sets `selected_club_id` cookie
+   - user selects a club on `/`
+   - server action sets `selected_club_id` cookie
 
 2. Request scoping
-     - `lib/supabase.ts` creates Supabase client and injects `x-club-id` header from cookie
-     - SQL policies in `supabase_updated.sql` read `request.headers` to enforce club scope
+   - `lib/supabase.ts` creates Supabase client and injects `x-club-id` header from cookie
+   - SQL policies in `supabase_updated.sql` read `request.headers` to enforce club scope
 
 3. Route protection
-     - `proxy.ts` redirects access to protected routes when cookie is absent
-     - sidebar layout also redirects to `/` when no club is selected
+   - `proxy.ts` redirects access to protected routes when cookie is absent
+   - sidebar layout also redirects to `/` when no club is selected
 
 4. Data mutations
-     - feature-level server actions in `features/*/actions.ts`
-     - client components call server actions and optimistically refresh UI
+   - feature-level server actions in `features/*/actions.ts`
+   - client components call server actions and optimistically refresh UI
 
 ## Project Structure
 
@@ -163,8 +162,8 @@ Notes:
 1. Create a Supabase project.
 2. In SQL editor, run all SQL from `supabase_updated.sql`.
 3. Ensure Storage buckets exist:
-     - `videos`
-     - `club-logos`
+   - `videos`
+   - `club-logos`
 4. For buckets above, use the policies already defined in `supabase_updated.sql`.
 
 What the SQL does:
@@ -317,10 +316,10 @@ Note:
 
 - Deploy on Vercel or any Node-compatible host.
 - Configure production env vars:
-    - `SUPABASE_URL`
-    - `SUPABASE_ANON_KEY`
+  - `SUPABASE_URL`
+  - `SUPABASE_ANON_KEY`
 - If running seed in production-like environments, also configure:
-    - `SUPABASE_SERVICE_ROLE_KEY`
+  - `SUPABASE_SERVICE_ROLE_KEY`
 - Apply `supabase_updated.sql` to target Supabase project before first run.
 
 ## License
