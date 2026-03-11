@@ -1,7 +1,7 @@
 import { createServerClient } from "@/lib/supabase"
 import { cookies } from "next/headers"
 import { Suspense } from "react"
-import VideoReview from "@/components/VideoReview"
+import VideoReview from "@/features/video-review/VideoReview"
 import { Skeleton } from "@/components/ui/skeleton"
 import { notFound } from "next/navigation"
 

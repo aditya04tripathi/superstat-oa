@@ -1,6 +1,6 @@
 import { Metadata } from "next"
 import { cookies } from "next/headers"
-import EventTypeManager from "@/components/EventTypeManager"
+import EventTypeManager from "@/features/event-types/EventTypeManager"
 import { createServerClient } from "@/lib/supabase"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 

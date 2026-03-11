@@ -2,15 +2,14 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { createBrowserClient } from "@/lib/supabase"
 import { Video, Event, Player, EventType } from "@/lib/types"
-import VideoPlayer from "@/components/VideoPlayer"
-import EventTagForm from "@/components/EventTagForm"
-import EventTimeline from "@/components/EventTimeline"
-import PlayerCreateForm from "@/components/PlayerCreateForm"
+import { getVideoPageData } from "./actions"
+import VideoPlayer from "./VideoPlayer"
+import EventTagForm from "./EventTagForm"
+import EventTimeline from "./EventTimeline"
+import PlayerCreateForm from "./PlayerCreateForm"
 import logger from "@/lib/logger"
 import { toast } from "sonner"
-import Cookies from "js-cookie"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft } from "lucide-react"
@@ -36,55 +35,18 @@ export default function VideoReview({
   const [currentTime, setCurrentTime] = useState(0)
 
   const fetchVideoData = async () => {
-    const clubId = Cookies.get("selected_club_id") || null
-    const supabase = createBrowserClient(clubId)
+    const { data, error } = await getVideoPageData(video.id)
 
-    const [
-      { data: videoData, error: videoError },
-      { data: eventsData, error: eventsError },
-      { data: playersData, error: playersError },
-      { data: eventTypesData, error: eventTypesError },
-    ] = await Promise.all([
-      supabase.from("videos").select("*").eq("id", video.id).single(),
-      supabase
-        .from("events")
-        .select("*")
-        .eq("video_id", video.id)
-        .order("timestamp_seconds", { ascending: true }),
-      supabase.from("players").select("*").order("name", { ascending: true }),
-      supabase
-        .from("event_types")
-        .select("*")
-        .order("name", { ascending: true }),
-    ])
-
-    if (videoError) {
-      logger.error("Error fetching video:", { error: videoError })
-      toast.error("Failed to refresh video")
-    } else {
-      setVideo(videoData)
+    if (error || !data) {
+      logger.error("Error refreshing video data:", { error })
+      toast.error("Failed to refresh video data")
+      return
     }
 
-    if (eventsError) {
-      logger.error("Error fetching events:", { error: eventsError })
-      toast.error("Failed to refresh events")
-    } else {
-      setEvents(eventsData || [])
-    }
-
-    if (playersError) {
-      logger.error("Error fetching players:", { error: playersError })
-      toast.error("Failed to refresh players")
-    } else {
-      setPlayers(playersData || [])
-    }
-
-    if (eventTypesError) {
-      logger.error("Error fetching event types:", { error: eventTypesError })
-      toast.error("Failed to refresh event types")
-    } else {
-      setEventTypes(eventTypesData || [])
-    }
+    setVideo(data.video)
+    setEvents(data.events)
+    setPlayers(data.players)
+    setEventTypes(data.eventTypes)
   }
 
   const handleEventSaved = () => {

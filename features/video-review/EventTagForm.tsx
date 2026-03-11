@@ -1,16 +1,20 @@
 "use client"
 
 import { useState } from "react"
-import Cookies from "js-cookie"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 
-import { createBrowserClient } from "@/lib/supabase"
+import { createEvent } from "./actions"
 import { Player, EventType } from "@/lib/types"
 import { Button } from "@/components/ui/button"
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
 import {
   Select,
@@ -19,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import PlayerSelector from "@/components/PlayerSelector"
+import PlayerSelector from "./PlayerSelector"
 
 const formSchema = z.object({
   event_type_id: z.string().min(1, "Select an event type."),
@@ -61,25 +65,23 @@ export default function EventTagForm({
 
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true)
-    const clubId = Cookies.get("selected_club_id") || null
-
     try {
-      const supabase = createBrowserClient(clubId)
-      const { error } = await supabase.from("events").insert({
+      const { error } = await createEvent({
         video_id: videoId,
         player_id: values.player_id,
         event_type_id: values.event_type_id,
         timestamp_seconds: values.timestamp_seconds,
       })
 
-      if (error) throw error
+      if (error) {
+        toast.error(error)
+        return
+      }
 
       toast.success("Event saved.")
       form.reset({ event_type_id: "", player_id: null, timestamp_seconds: 0 })
       setTimestamp(null)
       onEventSaved()
-    } catch {
-      toast.error("Failed to save event.")
     } finally {
       setIsSubmitting(false)
     }
@@ -92,7 +94,9 @@ export default function EventTagForm({
           <FieldLabel>Event Type</FieldLabel>
           <Select
             value={form.watch("event_type_id")}
-            onValueChange={(value) => form.setValue("event_type_id", value, { shouldValidate: true })}
+            onValueChange={(value) =>
+              form.setValue("event_type_id", value, { shouldValidate: true })
+            }
           >
             <SelectTrigger>
               <SelectValue placeholder="Select event type" />
@@ -120,7 +124,11 @@ export default function EventTagForm({
         <Field data-invalid={!!form.formState.errors.timestamp_seconds}>
           <FieldLabel>Timestamp</FieldLabel>
           <div className="flex items-center justify-between gap-3">
-            <Button type="button" variant="outline" onClick={handleCaptureTimestamp}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCaptureTimestamp}
+            >
               Capture
             </Button>
             <span className="min-w-20 text-right font-mono text-sm text-muted-foreground">

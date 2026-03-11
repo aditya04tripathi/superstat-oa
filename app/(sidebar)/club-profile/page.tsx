@@ -3,7 +3,7 @@ import { createServerClient } from "@/lib/supabase"
 import { cookies } from "next/headers"
 import { Suspense } from "react"
 
-import ClubProfilePanel from "@/components/ClubProfilePanel"
+import ClubProfilePanel from "@/features/club-profile/ClubProfilePanel"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 

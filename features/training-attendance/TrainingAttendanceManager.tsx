@@ -1,13 +1,18 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 
-import { createBrowserClient } from "@/lib/supabase"
-import { TrainingAttendance, TrainingSession } from "@/lib/types"
+import {
+  createAttendance,
+  updateAttendance,
+  deleteAttendance,
+  type AttendanceWithRelations,
+} from "./actions"
+import { TrainingSession } from "@/lib/types"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -58,11 +63,6 @@ type PlayerOption = {
   name: string
 }
 
-type AttendanceWithRelations = TrainingAttendance & {
-  training_sessions?: TrainingSession | null
-  players?: PlayerOption | null
-}
-
 const formSchema = z.object({
   session_id: z.string().min(1, "Select a session."),
   player_id: z.string().min(1, "Select a player."),
@@ -89,7 +89,6 @@ export default function TrainingAttendanceManager({
   sessions: TrainingSession[]
   players: PlayerOption[]
 }) {
-  const supabase = useMemo(() => createBrowserClient(clubId), [clubId])
   const [attendance, setAttendance] =
     useState<AttendanceWithRelations[]>(initialAttendance)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -149,59 +148,43 @@ export default function TrainingAttendanceManager({
     }
 
     setIsSaving(true)
-    const payload = {
-      club_id: clubId,
-      session_id: values.session_id,
-      player_id: values.player_id,
-      status: values.status,
-      notes: values.notes?.trim() || null,
-    }
 
     if (editingEntry) {
-      const { data, error } = await supabase
-        .from("training_attendance")
-        .update({
-          session_id: payload.session_id,
-          player_id: payload.player_id,
-          status: payload.status,
-          notes: payload.notes,
-        })
-        .eq("id", editingEntry.id)
-        .select("*, training_sessions(*), players(*)")
-        .single()
+      const { data, error } = await updateAttendance(editingEntry.id, {
+        session_id: values.session_id,
+        player_id: values.player_id,
+        status: values.status,
+        notes: values.notes?.trim() || null,
+      })
 
       if (error) {
         setIsSaving(false)
-        toast.error(error.message)
+        toast.error(error)
         return
       }
 
       if (data) {
         setAttendance((current) =>
-          current.map((item) =>
-            item.id === data.id ? (data as AttendanceWithRelations) : item
-          )
+          current.map((item) => (item.id === data.id ? data : item))
         )
       }
       toast.success("Attendance updated.")
     } else {
-      const { data, error } = await supabase
-        .from("training_attendance")
-        .insert(payload)
-        .select("*, training_sessions(*), players(*)")
-        .single()
+      const { data, error } = await createAttendance({
+        session_id: values.session_id,
+        player_id: values.player_id,
+        status: values.status,
+        notes: values.notes?.trim() || null,
+      })
 
       if (error) {
         setIsSaving(false)
-        toast.error(error.message)
+        toast.error(error)
         return
       }
 
       if (data) {
-        setAttendance((current) => [
-          data as AttendanceWithRelations,
-          ...current,
-        ])
+        setAttendance((current) => [data, ...current])
       }
       toast.success("Attendance recorded.")
     }
@@ -220,14 +203,11 @@ export default function TrainingAttendanceManager({
     if (!entryToDelete) return
     setIsDeleting(true)
 
-    const { error } = await supabase
-      .from("training_attendance")
-      .delete()
-      .eq("id", entryToDelete.id)
+    const { error } = await deleteAttendance(entryToDelete.id)
 
     if (error) {
       setIsDeleting(false)
-      toast.error(error.message)
+      toast.error(error)
       return
     }
 

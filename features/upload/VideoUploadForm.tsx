@@ -9,7 +9,7 @@ import { Field, FieldLabel, FieldError } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { createBrowserClient } from "@/lib/supabase"
+import { getSignedVideoUploadUrl, createVideoRecord } from "./actions"
 import logger from "@/lib/logger"
 import { FileUp, XCircle } from "lucide-react"
 import { toast } from "sonner"
@@ -24,6 +24,7 @@ const formSchema = z.object({
       "Video file is required."
     ),
 })
+
 export default function VideoUploadForm({ clubId }: { clubId: string | null }) {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [isUploading, setIsUploading] = useState(false)
@@ -42,8 +43,6 @@ export default function VideoUploadForm({ clubId }: { clubId: string | null }) {
       videoFile: [],
     },
   })
-
-  const supabase = createBrowserClient(clubId)
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
@@ -73,49 +72,59 @@ export default function VideoUploadForm({ clubId }: { clubId: string | null }) {
     }
 
     const videoFile = values.videoFile[0]
-    const filePath = `${clubId}/${crypto.randomUUID()}-${videoFile.name}`
+    setUploadProgress(10)
+
+    // Get a signed upload URL from the server action
+    const { data: uploadData, error: urlError } = await getSignedVideoUploadUrl(
+      videoFile.name
+    )
+
+    if (urlError || !uploadData) {
+      logger.error("Error getting signed upload URL:", urlError)
+      toast.error(`Upload failed: ${urlError ?? "Could not get upload URL"}`)
+      setIsUploading(false)
+      setUploadProgress(0)
+      return
+    }
+
     setUploadProgress(18)
 
-    const { error } = await supabase.storage
-      .from("videos")
-      .upload(filePath, videoFile, {
-        cacheControl: "3600",
-        upsert: false,
+    // Upload directly to the signed URL using XHR for progress tracking
+    const uploadSuccess = await new Promise<boolean>((resolve) => {
+      const xhr = new XMLHttpRequest()
+      xhr.upload.addEventListener("progress", (event) => {
+        if (event.lengthComputable) {
+          const pct = Math.round((event.loaded / event.total) * 54) + 18
+          setUploadProgress(pct)
+        }
       })
+      xhr.addEventListener("load", () =>
+        resolve(xhr.status >= 200 && xhr.status < 300)
+      )
+      xhr.addEventListener("error", () => resolve(false))
+      xhr.open("PUT", uploadData.signedUrl)
+      xhr.setRequestHeader("Content-Type", videoFile.type || "video/mp4")
+      xhr.send(videoFile)
+    })
 
-    if (error) {
-      logger.error("Error uploading video:", error.message)
-      toast.error(`Upload failed: ${error.message}`)
+    if (!uploadSuccess) {
+      logger.error("Error uploading video to storage.")
+      toast.error("Upload failed: Could not upload to storage")
       setIsUploading(false)
       setUploadProgress(0)
       return
     }
+
     setUploadProgress(72)
 
-    const { data: publicUrlData } = supabase.storage
-      .from("videos")
-      .getPublicUrl(filePath)
+    // Create the video record via server action
+    const { data: createdVideo, error: insertError } = await createVideoRecord(
+      values.title,
+      uploadData.path
+    )
 
-    if (!publicUrlData?.publicUrl) {
-      logger.error("Error getting public URL for video.")
-      toast.error("Failed to get video URL")
-      setIsUploading(false)
-      setUploadProgress(0)
-      return
-    }
-
-    const { data: createdVideo, error: insertError } = await supabase
-      .from("videos")
-      .insert({
-        title: values.title,
-        file_url: publicUrlData.publicUrl,
-        club_id: clubId,
-      })
-      .select("id")
-      .single()
-
-    if (insertError) {
-      logger.error("Error saving video to database:", insertError.message)
+    if (insertError || !createdVideo) {
+      logger.error("Error saving video to database:", insertError)
       toast.error("Failed to save video metadata")
       setIsUploading(false)
       setUploadProgress(0)

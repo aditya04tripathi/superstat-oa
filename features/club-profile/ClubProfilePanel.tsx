@@ -9,7 +9,11 @@ import { toast } from "sonner"
 import Image from "next/image"
 
 import { Club } from "@/lib/types"
-import { createBrowserClient } from "@/lib/supabase"
+import { getSignedLogoUploadUrl, getLogoPublicUrl, updateClub } from "./actions"
+import {
+  getSignedVideoUploadUrl,
+  createVideoRecord,
+} from "@/features/upload/actions"
 import { useUiShellStore } from "@/lib/ui-shell-store"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -85,43 +89,69 @@ export default function ClubProfilePanel({ club }: ClubProfilePanelProps) {
     },
   })
 
+  const uploadFileToSignedUrl = async (
+    signedUrl: string,
+    file: File,
+    onProgress?: (pct: number) => void
+  ): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const xhr = new XMLHttpRequest()
+      if (onProgress) {
+        xhr.upload.addEventListener("progress", (event) => {
+          if (event.lengthComputable) {
+            onProgress(Math.round((event.loaded / event.total) * 100))
+          }
+        })
+      }
+      xhr.addEventListener("load", () =>
+        resolve(xhr.status >= 200 && xhr.status < 300)
+      )
+      xhr.addEventListener("error", () => resolve(false))
+      xhr.open("PUT", signedUrl)
+      xhr.setRequestHeader(
+        "Content-Type",
+        file.type || "application/octet-stream"
+      )
+      xhr.send(file)
+    })
+  }
+
   const onSubmit = async (values: FormOutput) => {
     setIsSaving(true)
-    const supabase = createBrowserClient(club.id)
     let logoUrl = club.logo_url
 
     const upload = values.logo?.item(0)
     if (upload) {
-      const filePath = `${club.id}/${crypto.randomUUID()}-${upload.name}`
-      const { error: uploadError } = await supabase.storage
-        .from("club-logos")
-        .upload(filePath, upload, { upsert: true })
+      const { data: urlData, error: urlError } = await getSignedLogoUploadUrl(
+        upload.name
+      )
 
-      if (uploadError) {
+      if (urlError || !urlData) {
         setIsSaving(false)
-        toast.error(uploadError.message)
+        toast.error(urlError ?? "Could not get upload URL for logo.")
         return
       }
 
-      const { data } = supabase.storage
-        .from("club-logos")
-        .getPublicUrl(filePath)
-      logoUrl = data.publicUrl
+      const success = await uploadFileToSignedUrl(urlData.signedUrl, upload)
+      if (!success) {
+        setIsSaving(false)
+        toast.error("Failed to upload logo.")
+        return
+      }
+
+      logoUrl = await getLogoPublicUrl(urlData.path)
     }
 
-    const { error } = await supabase
-      .from("clubs")
-      .update({
-        name: values.name,
-        description: values.description || null,
-        contact_email: values.contact_email || null,
-        logo_url: logoUrl,
-      })
-      .eq("id", club.id)
+    const { error } = await updateClub({
+      name: values.name,
+      description: values.description || null,
+      contact_email: values.contact_email || null,
+      logo_url: logoUrl,
+    })
 
     if (error) {
       setIsSaving(false)
-      toast.error(error.message)
+      toast.error(error)
       return
     }
 
@@ -154,33 +184,42 @@ export default function ClubProfilePanel({ club }: ClubProfilePanelProps) {
 
     setIsUploadingVideo(true)
     setUploadProgress(12)
-    const supabase = createBrowserClient(club.id)
-    const filePath = `${club.id}/${crypto.randomUUID()}-${videoFile.name}`
 
-    const { error: uploadError } = await supabase.storage
-      .from("videos")
-      .upload(filePath, videoFile, { cacheControl: "3600", upsert: false })
+    const { data: urlData, error: urlError } = await getSignedVideoUploadUrl(
+      videoFile.name
+    )
 
-    if (uploadError) {
+    if (urlError || !urlData) {
       setIsUploadingVideo(false)
       setUploadProgress(0)
-      toast.error(uploadError.message)
+      toast.error(urlError ?? "Could not get upload URL.")
+      return
+    }
+
+    const success = await uploadFileToSignedUrl(
+      urlData.signedUrl,
+      videoFile,
+      (pct) => setUploadProgress(12 + Math.round(pct * 0.64))
+    )
+
+    if (!success) {
+      setIsUploadingVideo(false)
+      setUploadProgress(0)
+      toast.error("Failed to upload video.")
       return
     }
 
     setUploadProgress(76)
-    const { data } = supabase.storage.from("videos").getPublicUrl(filePath)
 
-    const { error: insertError } = await supabase.from("videos").insert({
-      title: videoTitle.trim(),
-      file_url: data.publicUrl,
-      club_id: club.id,
-    })
+    const { error: insertError } = await createVideoRecord(
+      videoTitle.trim(),
+      urlData.path
+    )
 
     if (insertError) {
       setIsUploadingVideo(false)
       setUploadProgress(0)
-      toast.error(insertError.message)
+      toast.error(insertError)
       return
     }
 

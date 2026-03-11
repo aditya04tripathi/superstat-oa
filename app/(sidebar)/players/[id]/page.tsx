@@ -1,7 +1,6 @@
 import { createServerClient } from "@/lib/supabase"
 import { cookies } from "next/headers"
 import { Suspense } from "react"
-import dynamic from "next/dynamic"
 import { notFound } from "next/navigation"
 import {
   Card,
@@ -11,7 +10,8 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import PlayerTagManager from "@/components/PlayerTagManager"
+import PlayerTagManager from "@/features/players/PlayerTagManager"
+import PlayerChartsLazy from "@/features/players/PlayerChartsLazy"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Table,
@@ -26,17 +26,6 @@ import { Badge } from "@/components/ui/badge"
 interface PageProps {
   params: Promise<{ id: string }>
 }
-
-const PlayerCharts = dynamic(() => import("@/components/PlayerCharts"), {
-  ssr: false,
-  loading: () => (
-    <div className="grid gap-4 md:grid-cols-2">
-      <Skeleton className="h-70 w-full" />
-      <Skeleton className="h-70 w-full" />
-      <Skeleton className="h-75 w-full md:col-span-2" />
-    </div>
-  ),
-})
 
 async function PlayerAnalytics({ id }: { id: string }) {
   const cookieStore = await cookies()
@@ -272,7 +261,7 @@ async function PlayerAnalytics({ id }: { id: string }) {
         </TabsList>
 
         <TabsContent value="insights" className="space-y-4">
-          <PlayerCharts
+          <PlayerChartsLazy
             distributionData={distributionData}
             trendData={trendData}
             comparisonData={comparisonData}

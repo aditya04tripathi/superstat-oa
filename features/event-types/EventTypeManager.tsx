@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
 
-import { createBrowserClient } from "@/lib/supabase"
+import { createEventType, updateEventType, deleteEventType } from "./actions"
 import { EventType } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import {
@@ -64,7 +64,6 @@ export default function EventTypeManager({
   initialEventTypes: EventType[]
   activationCounts: Record<string, number>
 }) {
-  const supabase = createBrowserClient(clubId)
   const [eventTypes, setEventTypes] = useState<EventType[]>(initialEventTypes)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingEventType, setEditingEventType] = useState<EventType | null>(
@@ -103,16 +102,14 @@ export default function EventTypeManager({
     setIsSaving(true)
 
     if (editingEventType) {
-      const { data, error } = await supabase
-        .from("event_types")
-        .update({ name: values.name })
-        .eq("id", editingEventType.id)
-        .select("*")
-        .single()
+      const { data, error } = await updateEventType(
+        editingEventType.id,
+        values.name
+      )
 
       if (error) {
         setIsSaving(false)
-        toast.error(error.message)
+        toast.error(error)
         return
       }
       if (data) {
@@ -124,15 +121,11 @@ export default function EventTypeManager({
       }
       toast.success("Event type updated.")
     } else {
-      const { data, error } = await supabase
-        .from("event_types")
-        .insert({ name: values.name, club_id: clubId })
-        .select("*")
-        .single()
+      const { data, error } = await createEventType(values.name)
 
       if (error) {
         setIsSaving(false)
-        toast.error(error.message)
+        toast.error(error)
         return
       }
       if (data) {
@@ -149,18 +142,15 @@ export default function EventTypeManager({
     form.reset({ name: "" })
   }
 
-  const deleteEventType = async () => {
+  const handleDeleteEventType = async () => {
     if (!eventTypeToDelete) return
     setIsDeleting(true)
 
-    const { error } = await supabase
-      .from("event_types")
-      .delete()
-      .eq("id", eventTypeToDelete.id)
+    const { error } = await deleteEventType(eventTypeToDelete.id)
 
     if (error) {
       setIsDeleting(false)
-      toast.error(error.message)
+      toast.error(error)
       return
     }
 
@@ -240,7 +230,7 @@ export default function EventTypeManager({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
-              onClick={deleteEventType}
+              onClick={handleDeleteEventType}
               disabled={isDeleting}
             >
               {isDeleting && <Spinner data-icon="inline-start" />}

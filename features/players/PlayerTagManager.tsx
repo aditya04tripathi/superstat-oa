@@ -4,7 +4,7 @@ import { useMemo, useState } from "react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
-import { createBrowserClient } from "@/lib/supabase"
+import { attachTag, createAndAttachTag, removeTag } from "./actions"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -17,7 +17,13 @@ import {
 } from "@/components/ui/dialog"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
 
 interface Tag {
@@ -75,16 +81,12 @@ export default function PlayerTagManager({
   const attachExistingTag = async () => {
     if (!selectedTagId) return
     setIsSaving(true)
-    const supabase = createBrowserClient(clubId)
-    const { error } = await supabase.from("player_tags").insert({
-      club_id: clubId,
-      player_id: playerId,
-      tag_id: selectedTagId,
-    })
+
+    const { error } = await attachTag(selectedTagId, playerId)
 
     if (error) {
       setIsSaving(false)
-      toast.error(error.message)
+      toast.error(error)
       return
     }
 
@@ -94,39 +96,23 @@ export default function PlayerTagManager({
     reload()
   }
 
-  const createAndAttachTag = async () => {
+  const handleCreateAndAttachTag = async () => {
     if (!newTagName.trim()) {
       toast.error("Tag name is required.")
       return
     }
 
     setIsSaving(true)
-    const supabase = createBrowserClient(clubId)
-    const { data: tag, error: tagError } = await supabase
-      .from("tags")
-      .insert({
-        club_id: clubId,
-        name: newTagName.trim(),
-        category: newTagCategory.trim() || null,
-      })
-      .select("*")
-      .single()
 
-    if (tagError || !tag) {
+    const { error } = await createAndAttachTag(
+      playerId,
+      newTagName.trim(),
+      newTagCategory.trim() || null
+    )
+
+    if (error) {
       setIsSaving(false)
-      toast.error(tagError?.message ?? "Could not create tag.")
-      return
-    }
-
-    const { error: attachError } = await supabase.from("player_tags").insert({
-      club_id: clubId,
-      player_id: playerId,
-      tag_id: tag.id,
-    })
-
-    if (attachError) {
-      setIsSaving(false)
-      toast.error(attachError.message)
+      toast.error(error)
       return
     }
 
@@ -138,14 +124,13 @@ export default function PlayerTagManager({
     reload()
   }
 
-  const removeTag = async (tagId: string) => {
-    const supabase = createBrowserClient(clubId)
+  const handleRemoveTag = async (tagId: string) => {
     const toRemove = playerTags.find((tag) => tag.tag_id === tagId)
     if (!toRemove) return
 
-    const { error } = await supabase.from("player_tags").delete().eq("id", toRemove.id)
+    const { error } = await removeTag(toRemove.id)
     if (error) {
-      toast.error(error.message)
+      toast.error(error)
       return
     }
 
@@ -157,7 +142,11 @@ export default function PlayerTagManager({
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium">Player Tags</h3>
-        <Button size="sm" variant="outline" onClick={() => setIsDialogOpen(true)}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setIsDialogOpen(true)}
+        >
           Manage Tags
         </Button>
       </div>
@@ -169,7 +158,7 @@ export default function PlayerTagManager({
               key={tag.id}
               type="button"
               className="cursor-pointer"
-              onClick={() => removeTag(tag.id)}
+              onClick={() => handleRemoveTag(tag.id)}
               aria-label={`Remove ${tag.name}`}
             >
               <Badge variant="secondary">{tag.name}</Badge>
@@ -191,7 +180,9 @@ export default function PlayerTagManager({
           <div className="flex flex-col gap-4">
             <FieldGroup>
               <Field>
-                <FieldLabel htmlFor="existing-tag">Attach Existing Tag</FieldLabel>
+                <FieldLabel htmlFor="existing-tag">
+                  Attach Existing Tag
+                </FieldLabel>
                 <Select value={selectedTagId} onValueChange={setSelectedTagId}>
                   <SelectTrigger id="existing-tag">
                     <SelectValue placeholder="Select a tag" />
@@ -205,7 +196,12 @@ export default function PlayerTagManager({
                   </SelectContent>
                 </Select>
               </Field>
-              <Button type="button" variant="outline" disabled={!selectedTagId || isSaving} onClick={attachExistingTag}>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!selectedTagId || isSaving}
+                onClick={attachExistingTag}
+              >
                 {isSaving && <Spinner data-icon="inline-start" />}
                 Attach Selected Tag
               </Button>
@@ -236,7 +232,7 @@ export default function PlayerTagManager({
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               Close
             </Button>
-            <Button onClick={createAndAttachTag} disabled={isSaving}>
+            <Button onClick={handleCreateAndAttachTag} disabled={isSaving}>
               {isSaving && <Spinner data-icon="inline-start" />}
               Create and Attach
             </Button>

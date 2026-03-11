@@ -6,7 +6,11 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 
-import { createBrowserClient } from "@/lib/supabase"
+import {
+  createTrainingSession,
+  updateTrainingSession,
+  deleteTrainingSession,
+} from "./actions"
 import { TrainingSession } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import {
@@ -79,7 +83,6 @@ export default function TrainingSessionsManager({
   clubId: string | null
   initialSessions: TrainingSession[]
 }) {
-  const supabase = useMemo(() => createBrowserClient(clubId), [clubId])
   const [sessions, setSessions] = useState<TrainingSession[]>(initialSessions)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingSession, setEditingSession] = useState<TrainingSession | null>(
@@ -134,24 +137,17 @@ export default function TrainingSessionsManager({
       title: values.title.trim(),
       session_type: values.session_type,
       starts_at: new Date(values.starts_at).toISOString(),
-      club_id: clubId,
     }
 
     if (editingSession) {
-      const { data, error } = await supabase
-        .from("training_sessions")
-        .update({
-          title: payload.title,
-          session_type: payload.session_type,
-          starts_at: payload.starts_at,
-        })
-        .eq("id", editingSession.id)
-        .select("*")
-        .single()
+      const { data, error } = await updateTrainingSession(
+        editingSession.id,
+        payload
+      )
 
       if (error) {
         setIsSaving(false)
-        toast.error(error.message)
+        toast.error(error)
         return
       }
 
@@ -162,15 +158,11 @@ export default function TrainingSessionsManager({
       }
       toast.success("Session updated.")
     } else {
-      const { data, error } = await supabase
-        .from("training_sessions")
-        .insert(payload)
-        .select("*")
-        .single()
+      const { data, error } = await createTrainingSession(payload)
 
       if (error) {
         setIsSaving(false)
-        toast.error(error.message)
+        toast.error(error)
         return
       }
 
@@ -194,14 +186,11 @@ export default function TrainingSessionsManager({
     if (!sessionToDelete) return
     setIsDeleting(true)
 
-    const { error } = await supabase
-      .from("training_sessions")
-      .delete()
-      .eq("id", sessionToDelete.id)
+    const { error } = await deleteTrainingSession(sessionToDelete.id)
 
     if (error) {
       setIsDeleting(false)
-      toast.error(error.message)
+      toast.error(error)
       return
     }
 

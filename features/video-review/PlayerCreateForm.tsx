@@ -1,21 +1,28 @@
 "use client"
 
 import { useState } from "react"
-import Cookies from "js-cookie"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
 
-import { createBrowserClient } from "@/lib/supabase"
+import { createPlayer } from "@/features/players/actions"
 import { Player } from "@/lib/types"
 import { Button } from "@/components/ui/button"
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 
 const formSchema = z.object({
-  name: z.string().trim().min(2, "Player name must have at least 2 characters."),
+  name: z
+    .string()
+    .trim()
+    .min(2, "Player name must have at least 2 characters."),
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -33,26 +40,13 @@ export default function PlayerCreateForm({
 
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true)
-    const clubId = Cookies.get("selected_club_id") || null
-
     try {
-      const supabase = createBrowserClient(clubId)
-      const { data: newPlayer, error } = await supabase
-        .from("players")
-        .insert({
-          name: values.name,
-          club_id: clubId,
-        })
-        .select("*")
-        .single()
-
-      if (error || !newPlayer) {
-        toast.error(error?.message ?? "Failed to create player.")
-        setIsSubmitting(false)
+      const { data, error } = await createPlayer({ name: values.name })
+      if (error || !data) {
+        toast.error(error ?? "Failed to create player.")
         return
       }
-
-      onPlayerCreated(newPlayer)
+      onPlayerCreated(data)
       toast.success("Player added.")
       form.reset({ name: "" })
     } finally {

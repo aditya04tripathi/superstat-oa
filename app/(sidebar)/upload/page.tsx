@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cookies } from "next/headers"
-import VideoUploadForm from "@/components/VideoUploadForm"
+import VideoUploadForm from "@/features/upload/VideoUploadForm"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 

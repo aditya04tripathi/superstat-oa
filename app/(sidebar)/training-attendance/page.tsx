@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { cookies } from "next/headers"
 
 import { createServerClient } from "@/lib/supabase"
-import TrainingAttendanceManager from "@/components/TrainingAttendanceManager"
+import TrainingAttendanceManager from "@/features/training-attendance/TrainingAttendanceManager"
 
 export const metadata: Metadata = {
   title: "Training Attendance",
@@ -16,7 +16,9 @@ export default async function TrainingAttendancePage() {
   if (!clubId) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
-        <p className="text-muted-foreground">Please log in to view attendance.</p>
+        <p className="text-muted-foreground">
+          Please log in to view attendance.
+        </p>
       </div>
     )
   }

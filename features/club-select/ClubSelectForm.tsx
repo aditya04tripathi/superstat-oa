@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
-import Cookies from "js-cookie"
 import { Info } from "lucide-react"
+
+import { setClubSession } from "./actions"
 
 import { Club } from "@/lib/types"
 import logger from "@/lib/logger"
@@ -33,20 +33,17 @@ export default function ClubSelectForm({ clubs }: ClubSelectFormProps) {
     clubs[0]?.id ?? ""
   )
   const [showInfoDialog, setShowInfoDialog] = useState(false)
-  const router = useRouter()
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!selectedClubId) {
       logger.warn("Please select a club to log in.")
       return
     }
 
-    Cookies.set("selected_club_id", selectedClubId, { expires: 7 })
     logger.success(
       `Logged in as club: ${clubs.find((c) => c.id === selectedClubId)?.name}`
     )
-    router.push("/dashboard")
-    router.refresh()
+    await setClubSession(selectedClubId)
   }
 
   return (

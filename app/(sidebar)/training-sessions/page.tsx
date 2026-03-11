@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { cookies } from "next/headers"
 
 import { createServerClient } from "@/lib/supabase"
-import TrainingSessionsManager from "@/components/TrainingSessionsManager"
+import TrainingSessionsManager from "@/features/training-sessions/TrainingSessionsManager"
 
 export const metadata: Metadata = {
   title: "Training Sessions",

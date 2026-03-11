@@ -3,7 +3,7 @@ import { redirect } from "next/navigation"
 
 import { createServerClient } from "@/lib/supabase"
 import logger from "@/lib/logger"
-import ClubSelectForm from "./ClubSelectForm"
+import ClubSelectForm from "@/features/club-select/ClubSelectForm"
 
 export const metadata = {
   title: "Login",

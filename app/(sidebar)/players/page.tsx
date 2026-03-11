@@ -1,7 +1,9 @@
 import { Metadata } from "next"
 import { createServerClient } from "@/lib/supabase"
 import { cookies } from "next/headers"
-import PlayersManager, { PlayerInsight } from "@/components/PlayersManager"
+import PlayersManager, {
+  PlayerInsight,
+} from "@/features/players/PlayersManager"
 
 export const metadata: Metadata = {
   title: "Players",

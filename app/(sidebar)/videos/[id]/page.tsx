@@ -2,7 +2,7 @@ import { cookies } from "next/headers"
 import { notFound } from "next/navigation"
 
 import { createServerClient } from "@/lib/supabase"
-import VideoReview from "@/components/VideoReview"
+import VideoReview from "@/features/video-review/VideoReview"
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -21,11 +21,19 @@ export default async function VideoTagPage({ params }: PageProps) {
 
   if (videoError || !video) notFound()
 
-  const [{ data: events }, { data: players }, { data: eventTypes }] = await Promise.all([
-    supabase.from("events").select("*").eq("video_id", id).order("timestamp_seconds", { ascending: true }),
-    supabase.from("players").select("*").order("name", { ascending: true }),
-    supabase.from("event_types").select("*").order("name", { ascending: true }),
-  ])
+  const [{ data: events }, { data: players }, { data: eventTypes }] =
+    await Promise.all([
+      supabase
+        .from("events")
+        .select("*")
+        .eq("video_id", id)
+        .order("timestamp_seconds", { ascending: true }),
+      supabase.from("players").select("*").order("name", { ascending: true }),
+      supabase
+        .from("event_types")
+        .select("*")
+        .order("name", { ascending: true }),
+    ])
 
   return (
     <VideoReview
@@ -36,4 +44,3 @@ export default async function VideoTagPage({ params }: PageProps) {
     />
   )
 }
-

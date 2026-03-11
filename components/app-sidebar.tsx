@@ -25,9 +25,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { createBrowserClient } from "@/lib/supabase"
+import { logout } from "@/app/actions"
 import logger from "@/lib/logger"
-import Cookies from "js-cookie"
 
 export function AppSidebar({
   collapsible,
@@ -37,12 +36,8 @@ export function AppSidebar({
   const pathname = usePathname()
 
   const handleLogout = async () => {
-    const clubId = Cookies.get("selected_club_id")
-    Cookies.remove("selected_club_id")
-
-    await createBrowserClient(clubId || null).auth.signOut()
     logger.info("Logged out successfully.")
-    window.location.href = "/"
+    await logout()
   }
 
   const navigation = [

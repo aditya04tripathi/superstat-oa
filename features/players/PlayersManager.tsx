@@ -8,7 +8,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
-import { createBrowserClient } from "@/lib/supabase"
+import { createPlayer, updatePlayer, deletePlayer } from "./actions"
 import { Player } from "@/lib/types"
 import { useUiShellStore } from "@/lib/ui-shell-store"
 import { Button } from "@/components/ui/button"
@@ -140,29 +140,20 @@ function PlayerDialogForm({
     }
 
     if (mode === "edit" && player) {
-      const { error } = await createBrowserClient(clubId)
-        .from("players")
-        .update(payload)
-        .eq("id", player.id)
+      const { error } = await updatePlayer(player.id, payload)
 
       if (error) {
         setIsSaving(false)
-        toast.error(error.message)
+        toast.error(error)
         return
       }
       toast.success("Player updated.")
     } else {
-      const { error } = await createBrowserClient(clubId)
-        .from("players")
-        .insert({
-          ...payload,
-          club_id: clubId,
-          is_active: true,
-        })
+      const { error } = await createPlayer(payload)
 
       if (error) {
         setIsSaving(false)
-        toast.error(error.message)
+        toast.error(error)
         return
       }
 
@@ -299,18 +290,6 @@ export default function PlayersManager({
   const activePlayers = players.filter((player) => player.is_active).length
 
   const refreshData = async () => {
-    const { data, error } = await createBrowserClient(clubId)
-      .from("players")
-      .select("*")
-      .eq("club_id", clubId)
-      .order("name", { ascending: true })
-
-    if (error) {
-      toast.error("Could not refresh players.")
-      return
-    }
-
-    setPlayers(data ?? [])
     router.refresh()
   }
 
@@ -318,14 +297,11 @@ export default function PlayersManager({
     if (!deletingPlayer) return
     setIsDeleting(true)
 
-    const { error } = await createBrowserClient(clubId)
-      .from("players")
-      .delete()
-      .eq("id", deletingPlayer.id)
+    const { error } = await deletePlayer(deletingPlayer.id)
 
     if (error) {
       setIsDeleting(false)
-      toast.error(error.message)
+      toast.error(error)
       return
     }
 
